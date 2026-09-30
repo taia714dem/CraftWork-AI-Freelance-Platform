@@ -1,0 +1,130 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+
+// 👤 БЛОК ПОЛЬЗОВАТЕЛЕЙ И ПРОФИЛЕЙ
+
+model Worker {
+  id           String         @id @default(uuid())
+  tgId         String         @unique
+  fullName     String
+  avatarUrl    String?
+  bio          String?
+  grade        String         @default("JUNIOR") 
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  
+  skills       WorkerSkill[]
+  portfolio    PortfolioCase[]
+  responses    Response[]
+}
+
+model WorkerSkill {
+  id        String   @id @default(uuid())
+  workerId  String
+  role      String   
+  skillName String   
+  
+  worker    Worker   @relation(fields: [workerId], references: [id], onDelete: Cascade)
+}
+
+model PortfolioCase {
+  id          String   @id @default(uuid())
+  workerId    String
+  title       String
+  description String
+  coverUrl    String?
+  projectUrl  String?
+  createdAt   DateTime @default(now())
+  
+  worker      Worker   @relation(fields: [workerId], references: [id], onDelete: Cascade)
+}
+
+
+
+// 🛒 БЛОК ЗАКАЗОВ И КОМАНД
+
+model Order {
+  id            String      @id @default(uuid())
+  title         String
+  specification String      // ТЗ в формате Markdown/JSON
+  stack         String[]   
+  gradeRequired String      
+  totalPriceRub Int
+  status        String      @default("DRAFT") // DRAFT, SEARCHING, IN_WORK, COMPLETED, CANCELLED
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  responses     Response[]
+  teams         Team[]
+  milestones    Milestone[]
+  messages      Message[]
+  taskChanges   TaskChange[]
+}
+
+model Response {
+  id          String   @id @default(uuid())
+  orderId     String
+  workerId    String
+  coverLetter String?
+  daysTerm    Int      // Срок выполнения в днях, введенный фрилансером
+  vectorScore Float    // Балл 1-го слоя мэтчинга (pgvector)
+  aiScore     Float?   // Балл 2-го слоя мэтчинга (ИИ)
+  createdAt   DateTime @default(now())
+  
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  worker      Worker   @relation(fields: [workerId], references: [id], onDelete: Cascade)
+}
+
+model Team {
+  id        String   @id @default(uuid())
+  orderId   String
+  chatLink  String   // Ссылка на закрытый рабочий ТГ-чат проекта
+  createdAt DateTime @default(now())
+  
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+
+
+// 🛠️ БЛОК ПРОЦЕССА РАБОТЫ И КОНТРОЛЯ
+
+model Milestone {
+  id          String    @id @default(uuid())
+  orderId     String
+  title       String    
+  status      String    @default("PENDING") // PENDING, IN_WORK, SUBMITTED, COMPLETED
+  deadlineAt  DateTime
+  completedAt DateTime?
+  
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  orderId   String
+  sender    String   // CUSTOMER, WORKER, SYSTEM
+  text      String
+  fileUrl   String?
+  createdAt DateTime @default(now())
+  
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model TaskChange {
+  id          String    @id @default(uuid())
+  orderId     String
+  description String
+  priceRub    Int       @default(0) // 0 для бесплатных правок
+  isPaid      Boolean   @default(false)
+  status      String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt   DateTime  @default(now())
+  
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
