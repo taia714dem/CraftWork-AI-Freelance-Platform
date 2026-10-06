@@ -29,7 +29,7 @@ model WorkerSkill {
   id        String   @id @default(uuid())
   workerId  String
   role      String   
-  skillName String   
+  skillName String  
   
   worker    Worker   @relation(fields: [workerId], references: [id], onDelete: Cascade)
 }
@@ -52,14 +52,16 @@ model PortfolioCase {
 
 model Order {
   id            String      @id @default(uuid())
+  clientId      String?
   title         String
   specification String      // ТЗ в формате Markdown/JSON
   stack         String[]   
   gradeRequired String      
   totalPriceRub Int
-  status        String      @default("DRAFT") // DRAFT, SEARCHING, IN_WORK, COMPLETED, CANCELLED
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  role          String[]
+  status        String?      @default("DRAFT") // DRAFT, SEARCHING, IN_WORK, COMPLETED, CANCELLED
+  createdAt     DateTime?    @default(now())
+  updatedAt     DateTime?    @updatedAt
   
   responses     Response[]
   teams         Team[]
@@ -77,7 +79,7 @@ model Response {
   vectorScore Float    // Балл 1-го слоя мэтчинга (pgvector)
   aiScore     Float?   // Балл 2-го слоя мэтчинга (ИИ)
   createdAt   DateTime @default(now())
-  
+  status      String  @default("INVITED") // INVITED (разослано) или APPLIED (откликнулся)
   order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   worker      Worker   @relation(fields: [workerId], references: [id], onDelete: Cascade)
 }

@@ -29,3 +29,5 @@
 !.vscode/extensions.json
 
 /src/generated/prisma
+
+commands.txt
