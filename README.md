@@ -11,7 +11,7 @@
 
 ## Установка и запуск
 
-    git clone https://github.com
+    git clone https://github.com/taia714dem/CraftWork-AI-Freelance-Platform
     cd CraftWork
     npm install
     docker start craftwork-postgres
