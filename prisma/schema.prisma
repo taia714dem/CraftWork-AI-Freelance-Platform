@@ -23,6 +23,8 @@ model Worker {
   skills       WorkerSkill[]
   portfolio    PortfolioCase[]
   responses    Response[]
+
+  @@map("taisia_demidova_worker")
 }
 
 model WorkerSkill {
@@ -32,6 +34,8 @@ model WorkerSkill {
   skillName String  
   
   worker    Worker   @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@map("taisia_demidova_worker_skill")
 }
 
 model PortfolioCase {
@@ -68,6 +72,8 @@ model Order {
   milestones    Milestone[]
   messages      Message[]
   taskChanges   TaskChange[]
+
+  @@map("taisia_demidova_order")
 }
 
 model Response {
@@ -82,6 +88,8 @@ model Response {
   status      String  @default("INVITED") // INVITED (разослано) или APPLIED (откликнулся)
   order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   worker      Worker   @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@map("taisia_demidova_response")
 }
 
 model Team {

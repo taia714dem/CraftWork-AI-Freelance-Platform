@@ -4,29 +4,34 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 
-
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
-  constructor() {
-    // 1. Создаем пул соединений драйвера pg
-    const pool = new pg.Pool({
-      connectionString: process.env.DATABASE_URL,
-    });
 
-    // 2. Обертываем его в адаптер PrismaPg
+  public queryCount = 0;
+  public totalDbDuration = 0;
+
+  constructor() {
+    const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
     const adapter = new PrismaPg(pool);
 
-    // 3. Передаем готовый адаптер в конструктор PrismaClient
-    super({ adapter });
+    super({
+      adapter,
+      log: [{ emit: 'event', level: 'query' }],
+    });
+
+
+    (this as any).$on('query', (e: any) => {
+      this.queryCount++;
+      this.totalDbDuration += e.duration;
+    });
   }
 
 
-    
-  async onModuleInit() {
-    await this.$connect();
+  public resetMetrics() {
+    this.queryCount = 0;
+    this.totalDbDuration = 0;
   }
- 
-  async onModuleDestroy() {
-    await this.$disconnect();
-  }
+
+  async onModuleInit() { await this.$connect(); }
+  async onModuleDestroy() { await this.$disconnect(); }
 }

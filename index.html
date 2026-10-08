@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>CraftWork - Панель Заказчика</title>
+  <style>
+    body { font-family: sans-serif; max-width: 900px; margin: 30px auto; padding: 0 20px; background: #f4f6f8; color: #333; }
+    h1, h2 { color: #111; }
+    .card { background: #fff; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
+    input, textarea, select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+    textarea { height: 8px; min-height: 60px; }
+    button { background: #0070f3; color: #fff; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+    button:hover { background: #0051a8; }
+    button.secondary { background: #222; }
+    button.secondary:hover { background: #000; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+    th { background: #eaeaea; }
+    .status-invited { color: #f5a623; font-weight: bold; }
+    .status-applied { color: #27ae60; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <h1>Панель управления заказами CraftWork</h1>
+
+  
+  <div class="card">
+    <h2>1. Авторизация в системе</h2>
+    <div class="form-group">
+      <label for="authToken">Идентификатор заказчика (Токен):</label>
+      <input type="text" id="authToken" value="taisia_demidova_client">
+    </div>
+  </div>
+
+
+  <div class="card">
+    <h2>2. Публикация нового заказа</h2>
+    <div class="form-group">
+      <label for="title">Название задачи:</label>
+      <input type="text" id="title" value="Разработка высоконагруженного API на Nest.js">
+    </div>
+    <div class="form-group">
+      <label for="specification">Техническое задание:</label>
+      <textarea id="specification">Реализация алгоритмов мэтчинга и структуры хранения откликов в PostgreSQL.</textarea>
+    </div>
+    <div class="form-group">
+      <label for="roles">Направление (через запятую):</label>
+      <input type="text" id="roles" value="BACKEND">
+    </div>
+    <div class="form-group">
+      <label for="stack">Стек технологий (через запятую):</label>
+      <input type="text" id="stack" value="Nest.js, TypeScript, PostgreSQL">
+    </div>
+    <div class="form-group">
+      <label for="grade">Требуемый грейд:</label>
+      <select id="grade">
+        <option value="MIDDLE" selected>MIDDLE</option>
+        <option value="JUNIOR">JUNIOR</option>
+        <option value="SENIOR">SENIOR</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="price">Бюджет задачи (руб):</label>
+      <input type="number" id="price" value="125000">
+    </div>
+    <button onclick="createOrder()">Опубликовать заказ и запустить мэтчинг</button>
+  </div>
+
+  <!-- АНАЛИТИЧЕСКАЯ СВОДКА ОТКЛИКОВ -->
+  <div class="card" id="summaryCard" style="display: none;">
+    <h2>3. Аналитическая сводка откликов исполнителей</h2>
+    <p><strong>ID Заказа:</strong> <span id="summaryOrderId"></span></p>
+    <p><strong>Текущая задача:</strong> <span id="summaryTitle"></span></p>
+    
+    <div style="margin: 20px 0;">
+      <button class="secondary" onclick="simulateResponses()">Запустить массовую симуляцию ответов</button>
+      <button onclick="loadSummary()">Обновить сводку данных</button>
+    </div>
+
+    <h3>Подходящие исполнители, подтвердившие отклик:</h3>
+    <table id="workersTable">
+      <thead>
+        <tr>
+          <th>ФИО Специалиста</th>
+          <th>Грейд</th>
+          <th>Статус отклика</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Строки таблицы генерируются JS-кодом -->
+      </tbody>
+    </table>
+  </div>
+
+  
+  <script>
+    let currentOrderId = 'test-order-id-123'; // ID заказа из нашего сид-скрипта
+
+    function getHeaders() {
+      const token = document.getElementById('authToken').value;
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      };
+    }
+
+    
+    async function createOrder() {
+      const payload = {
+        title: document.getElementById('title').value,
+        specification: document.getElementById('specification').value,
+        role: document.getElementById('roles').value.split(',').map(s => s.trim()),
+        stack: document.getElementById('stack').value.split(',').map(s => s.trim()),
+        gradeRequired: document.getElementById('grade').value,
+        totalPriceRub: Number(document.getElementById('price').value)
+      };
+
+      try {
+        const response = await fetch('/orders', {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify(payload)
+        });
+        
+        if (!response.ok) throw new Error(`Ошибка сервера: ${response.status}`);
+        const data = await response.getHeaders ? null : await response.json();
+        
+        currentOrderId = data.id;
+        document.getElementById('summaryOrderId').innerText = currentOrderId;
+        document.getElementById('summaryTitle').innerText = data.title;
+        document.getElementById('summaryCard').style.display = 'block';
+        
+        alert('Заказ успешно создан! Строки приглашений сгенерированы в БД PostgreSQL.');
+        await loadSummary();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+  
+    async function simulateResponses() {
+      try {
+        const response = await fetch(`/orders/${currentOrderId}/simulate-responses`, {
+          method: 'POST',
+          headers: getHeaders()
+        });
+        if (!response.ok) throw new Error(`Ошибка симуляции: ${response.status}`);
+        alert('Симуляция завершена! Статусы подходящих воркеров успешно изменены на APPLIED.');
+        await loadSummary();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function loadSummary() {
+      try {
+        const response = await fetch(`/orders/${currentOrderId}/responses`, {
+          method: 'GET',
+          headers: getHeaders()
+        });
+        if (!response.ok) throw new Error(`Не удалось загрузить сводку: ${response.status}`);
+        const data = await response.json();
+
+        const tbody = document.querySelector('#workersTable tbody');
+        tbody.innerHTML = '';
+
+        if (!data.responses || data.responses.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Список активных откликов пуст (идет ожидание ответов)...</td></tr>';
+          return;
+        }
+
+        data.responses.forEach(resp => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${resp.worker.fullName}</td>
+            <td>${resp.worker.grade}</td>
+            <td><span class="status-applied">${resp.status}</span></td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+  </script>
+</body>
+</html>
