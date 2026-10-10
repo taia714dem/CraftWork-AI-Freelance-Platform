@@ -2,8 +2,8 @@ import 'dotenv/config';
 
 const PREFIX = 'taisia_demidova';
 const AUTH_HEADER = 'Bearer taisia_demidova_client';
-const REPEATS = 1;
-const WARMUPS = 0;
+const REPEATS = 20;
+const WARMUPS = 3;
 
 const ROUTES = [
   {

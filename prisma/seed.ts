@@ -7,22 +7,26 @@ const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-const TOTAL_WORKERS = 30000; 
-
 async function main() {
-  console.log(`START`);
+
+  const totalWorkers = parseInt(process.argv[2], 10);
+  if (!totalWorkers || isNaN(totalWorkers)) {
+    throw new Error('Необходимо указать количество воркеров числовым аргументом.');
+  }
+
+  console.log(`START: ${totalWorkers}`);
 
   await prisma.response.deleteMany({});
   await prisma.workerSkill.deleteMany({});
   await prisma.worker.deleteMany({});
   await prisma.order.deleteMany({});
 
-  for (let i = 1; i <= TOTAL_WORKERS; i++) {
+  for (let i = 1; i <= totalWorkers; i++) {
     const isMatching = i % 3 === 0;
 
     await prisma.worker.create({
       data: {
-        tgId: `worker_tg_${i}`,
+        tgId: `worker_tg_${totalWorkers}_${i}`,
         fullName: isMatching ? `Matching Worker ${i}` : `Regular Worker ${i}`,
         grade: isMatching ? 'MIDDLE' : (i % 2 === 0 ? 'JUNIOR' : 'SENIOR'),
         skills: {
@@ -43,7 +47,7 @@ async function main() {
       }
     });
 
-    if (i % 5000 === 0) {
+    if (i % 25000 === 0) {
       console.log(`Progress: ${i}`);
     }
   }

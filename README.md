@@ -38,7 +38,10 @@
 
 | Метод и путь | Параметры | Ответ | Ошибки |
 | :--- | :--- | :--- | :--- |
-| POST /orders | **Headers:** Authorization <br>**Body (JSON):** title, specification, role, stack, gradeRequired, totalPriceRub | 201 и JSON-объект созданного заказа из базы данных | 400, 401 |
-| POST /orders/:id/simulate-responses | **Headers:** Authorization <br>**Param:** id (идентификатор заказа) | 201 и объект подтверждения `{"success": true}` | 401, 500 |
-| GET /orders/:id/responses | **Headers:** Authorization <br>**Param:** id (идентификатор заказа) | 200 и объект параметров заказа со вложенным массивом откликов исполнителей | 401, 500 |
+| POST /orders | **Headers:** Authorization <br>**Body (JSON):** title, specification, role, stack, gradeRequired, totalPriceRub | 201 и JSON-объект созданного заказа из базы данных | 400, 401 | 422
+| POST /orders/:id/simulate-responses | **Headers:** Authorization <br>**Param:** id (идентификатор заказа) | 201 и объект подтверждения `{"success": true}` | 401, 500 | 404
+| GET /orders/:id/responses | **Headers:** Authorization <br>**Param:** id (идентификатор заказа) | 200 и объект параметров заказа со вложенным массивом откликов исполнителей | 401, 500 | 404
 
+## Команды наполнения
+Малое наполнение: npm run seed:small
+Рабочее наполение: npm run seed:heavy
