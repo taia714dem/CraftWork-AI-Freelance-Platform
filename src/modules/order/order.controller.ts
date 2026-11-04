@@ -11,15 +11,12 @@ import {
 } from '@nestjs/common';
 import { OrderService } from './order.service.js';
 import { CreateOrderDto } from './dto/create-order.dto.js';
-import { PrismaService } from '../../../prisma/prisma.service.js';
 
 @Controller('orders')
 export class OrderController {
   constructor(
     @Inject(OrderService)
     private readonly orderService: OrderService,
-    // Delete later
-    @Inject(PrismaService) private readonly prismaService: PrismaService,
   ) {}
 
   @Post()
@@ -28,34 +25,22 @@ export class OrderController {
     @Headers('authorization') authHeader: string,
   ) {
     try {
-      this.prismaService.resetMetrics(); // Delete later
-
-      //Проверка авторизации
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        throw new UnauthorizedException('Вы не авторизованы');
+        throw new UnauthorizedException('You are not authorized');
       }
       const clientId = authHeader.split(' ')[1];
       if (!clientId) {
-        throw new UnauthorizedException('Неверный токен');
+        throw new UnauthorizedException('Wrong token');
       }
 
       dto.clientId = clientId;
-      const start = performance.now(); // Delete later
-      const createOrder = await this.orderService.createOrder(dto);
-      const totalTime = performance.now() - start; // Delete later
-      // Delete later
-      console.log(
-        `\n[МЕТРИКИ POST /orders] Общее время: ${totalTime.toFixed(2)}мс | В базе (мс): ${this.prismaService.totalDbDuration.toFixed(2)} | Количество SQL-запросов: ${this.prismaService.queryCount}`,
-      );
-
-      return createOrder;
+      return this.orderService.createOrder(dto);
     } catch (error) {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
-      console.error('=== КРИТИЧЕСКАЯ ОШИБКА БЭКЕНДА ===', error);
       throw new InternalServerErrorException(
-        'Произошла системная ошибка при создании заказа',
+        'System mistake occured while order creating',
       );
     }
   }
@@ -63,22 +48,11 @@ export class OrderController {
   @Post(':id/simulate-responses')
   async simulateResponses(@Param('id') orderId: string) {
     try {
-      this.prismaService.resetMetrics(); // Delete later
-
-      const start = performance.now();
       await this.orderService.simulateResponses(orderId);
-      const totalTime = performance.now() - start;
-
-      // Delete later
-      console.log(
-        `[МЕТРИКИ POST /simulate-responses] Общее время: ${totalTime.toFixed(2)}мс | В базе (мс): ${this.prismaService.totalDbDuration.toFixed(2)} | Количество SQL-запросов: ${this.prismaService.queryCount}`,
-      );
-
       return { success: true };
     } catch (error) {
-      console.error('=== ОШИБКА СИМУЛЯЦИИ ===', error);
       throw new InternalServerErrorException(
-        'Не удалось запустить симуляцию откликов',
+        'Failed to launch responses simulation',
       );
     }
   }
@@ -86,22 +60,9 @@ export class OrderController {
   @Get(':id/responses')
   async getAllResponses(@Param('id') orderId: string) {
     try {
-      this.prismaService.resetMetrics(); //Delete later
-
-      //Change later on just "return"
-      const start = performance.now();
-      const res = await this.orderService.getAllResponses(orderId);
-      const totalTime = performance.now() - start;
-
-      // Delete later
-      console.log(
-        `\n[МЕТРИКИ GET /responses] Общее время: ${totalTime.toFixed(2)}мс | В базе (мс): ${this.prismaService.totalDbDuration.toFixed(2)} | Количество SQL-запросов: ${this.prismaService.queryCount}`,
-      );
-
-      return res;
+      return this.orderService.getAllResponses(orderId);
     } catch (error) {
-      console.error('=== ОШИБКА СБОРА ОТКЛИКОВ ===', error);
-      throw new InternalServerErrorException('Не удалось собрать отклики');
+      throw new InternalServerErrorException('Error with recieving responses');
     }
   }
 }

@@ -18,15 +18,15 @@ export class OrderRepository {
   }
 
   async findWorkersBySkills(role:string[], stack: string[], grade:string){
-    return await this.prisma.worker.findMany({
+    return await this.prisma.workerSpecialization.findMany({
       where: {
-        grade: grade,
+        role: {in: role},
         skills: {
           some: {
-            role: {in: role},
             skillName: {in: stack}
           }
-        }
+        },
+        grade: grade
       }
     })
   }
