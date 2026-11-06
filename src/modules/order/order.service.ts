@@ -30,7 +30,7 @@ export class OrderService {
     //Create Responses for sending order to workers
     if (matchingWorkers.length > 0) {
       const invitePromises = matchingWorkers.map((worker) =>
-        this.orderRepository.createInvitation(newOrder.id, worker.id),
+        this.orderRepository.createInvitation(newOrder.id, worker.workerId),
       );
       //Taking and doing the whole request
       await Promise.all(invitePromises);
